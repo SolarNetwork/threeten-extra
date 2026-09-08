@@ -37,12 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.time.Duration;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
 import java.util.Locale;
 
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Test AmountFormats.
@@ -164,6 +166,34 @@ public class TestAmountFormats {
     public void test_wordBased(Period period, Duration duration, Locale locale, String expected) {
         assertEquals(expected, AmountFormats.wordBased(period, duration, locale));
         assertEquals(expected, AmountFormats.wordBased(PeriodDuration.of(period, duration), locale));
+    }
+
+    public static Object[][] period_duration_wordBased_style() {
+        return new Object[][] {
+            {Period.ofDays(1), Duration.ofMinutes(180 + 2), Locale.ROOT, "1 day, 3 hr and 2 min", "1 day, 3 hr, 2 min", "1d 3h 2m"},
+            {Period.ofDays(2), Duration.ofSeconds(180), Locale.ROOT, "2 days and 3 min", "2 days, 3 min", "2d 3m"},
+            {Period.ofDays(7), Duration.ofMinutes(80), Locale.ROOT, "1 wk, 1 hr and 20 min", "1 wk, 1 hr, 20 min", "1w 1h 20m"},
+            {Period.ZERO, Duration.ofMillis(1_000), Locale.ROOT, "1 sec", "1 sec", "1s"},
+
+            {Period.ofMonths(0), Duration.ofSeconds(0), Locale.ENGLISH, "0 ms", "0 ms", "0ms"},
+            {Period.ofMonths(0), Duration.ofHours(9), Locale.ENGLISH, "9 hr", "9 hr", "9h"},
+            {Period.ofMonths(1), Duration.ZERO, Locale.ENGLISH, "1 mth", "1 mth", "1m"},
+            {Period.ofMonths(4), Duration.ZERO, Locale.ENGLISH, "4 mths", "4 mths", "4m"},
+            {Period.of(1, 2, 5), Duration.ofHours(4), Locale.ENGLISH, "1 yr, 2 mths, 5 days and 4 hr", "1 yr, 2 mths, 5 days, 4 hr", "1y 2m 5d 4h"},
+            {Period.ofDays(5), Duration.ofDays(2).plusHours(6), Locale.ENGLISH, "7 days and 6 hr", "7 days, 6 hr", "7d 6h"},
+            {Period.ofDays(5), Duration.ofDays(-2).plusHours(-6), Locale.ENGLISH, "3 days and -6 hr", "3 days, -6 hr", "3d -6h"},
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("period_duration_wordBased_style")
+    public void test_wordBased_style(Period period, Duration duration, Locale locale, String expectedLong, String expectedMedium, String expectedShort) {
+        assertEquals(expectedLong, AmountFormats.wordBased(period, duration, locale, FormatStyle.LONG), "LONG style");
+        assertEquals(expectedLong, AmountFormats.wordBased(PeriodDuration.of(period, duration), locale, FormatStyle.LONG), "LONG style");
+        assertEquals(expectedMedium, AmountFormats.wordBased(period, duration, locale, FormatStyle.MEDIUM), "MEDIUM style");
+        assertEquals(expectedMedium, AmountFormats.wordBased(PeriodDuration.of(period, duration), locale, FormatStyle.MEDIUM), "MEDIUM style");
+        assertEquals(expectedShort, AmountFormats.wordBased(period, duration, locale, FormatStyle.SHORT), "SHORT style");
+        assertEquals(expectedShort, AmountFormats.wordBased(PeriodDuration.of(period, duration), locale, FormatStyle.SHORT), "SHORT style");
     }
 
     //-----------------------------------------------------------------------
